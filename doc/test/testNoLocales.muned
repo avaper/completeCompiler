@@ -1,0 +1,81 @@
+MODULE LEVEL0;
+  	
+  	VAR GLOBAL : INTEGER;
+  
+	(*-----------------------------*)
+	PROCEDURE LEVEL1 ();
+ 
+		VAR NONLOCAL1: INTEGER;
+			NONLOCAL2: INTEGER;
+ 		
+		(*-----------------------------*)		
+		PROCEDURE FUNCLEVEL2 () : INTEGER;
+				
+	  	BEGIN
+		
+			NONLOCAL1 := 1234;
+			
+			RETURN NONLOCAL1;
+	  	
+	  	END FUNCLEVEL2;
+		(*-----------------------------*)
+		
+		(*-----------------------------*)		
+		PROCEDURE PROCLEVEL2 ();
+				
+	  	BEGIN
+		
+			NONLOCAL1 := 4321;
+	  	
+	  	END PROCLEVEL2;
+		(*-----------------------------*)  			
+  			
+	BEGIN
+	
+		NONLOCAL1 := 1234;
+		WRITEINT(NONLOCAL1);
+  		WRITELN;		
+
+	 	PROCLEVEL2();
+	 	
+	 	IF NONLOCAL1 <> 4321 THEN
+  			
+  			WRITESTRING("Error en el TEST de variables no locales en procedimientos");
+  			WRITELN;
+  			
+  		ELSE
+  		
+  			WRITESTRING("TEST de variables locales en procedimientos OK");
+  			WRITELN;
+
+  		END;
+  
+		WRITEINT(NONLOCAL1);
+  		WRITELN;
+  				
+	 	NONLOCAL2 := FUNCLEVEL2();
+	 	
+	 	IF NONLOCAL2 <> 1234 THEN
+  			
+  			WRITESTRING("Error en el TEST de variables no locales en funciones");
+  			WRITELN;
+  			
+  		ELSE
+  		
+  			WRITESTRING("TEST de variables locales en funciones OK");
+  			WRITELN;
+
+  		END;
+  
+		WRITEINT(NONLOCAL2);
+  		WRITELN;
+
+ 	 
+	END LEVEL1;
+	(*-----------------------------*)
+
+BEGIN
+
+  LEVEL1();
+
+END LEVEL0;

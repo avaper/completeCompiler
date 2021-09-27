@@ -1,0 +1,35 @@
+MODULE obligatoria;
+
+    PROCEDURE a();
+    
+    	VAR 
+    		aux : INTEGER;
+ 
+	    PROCEDURE b();
+	    
+	    BEGIN
+	    
+	    	a();
+			
+	    END b;
+	    
+	    PROCEDURE c(): INTEGER;
+	    
+	    BEGIN
+	    	
+	    	a();
+	    	RETURN 2;
+	    	
+	    END c;
+       
+    BEGIN
+ 
+	 	  aux := c();
+		
+    END a;  		 
+    
+BEGIN
+	
+	a();
+	
+END obligatoria;

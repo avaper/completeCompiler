@@ -1,0 +1,29 @@
+MODULE TIPOS;
+
+  TYPE
+	personTAD = record
+	 	isAlive: BOOLEAN;
+	 	agE	: INTEGER;
+
+	 	(*
+	 	age : BOOLEAN;
+	 	*)
+  	END;
+
+  VAR Alejo	: personTAD;
+
+  PROCEDURE Sumar (VAR a, b, c: INTEGER);
+  	
+  	TYPE 
+  		personTAD = record
+	 		agee2	: INTEGER;
+	 		isAlive: BOOLEAN;
+  	 	END; 
+  		 
+ 	BEGIN
+  
+  	END Sumar; 
+  
+  BEGIN
+
+END TIPOS;

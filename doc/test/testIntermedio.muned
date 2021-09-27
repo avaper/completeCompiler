@@ -1,0 +1,33 @@
+MODULE INTERMEDIO;
+
+	TYPE
+		TipoPersona = record
+	 		age	   	: INTEGER;
+	 		guitars : INTEGER;
+	  		isAlive	: BOOLEAN;
+	    END;
+	      
+	VAR 	X		: INTEGER;
+			Y		: BOOLEAN;
+			Alejo	: TipoPersona;
+
+	PROCEDURE funcTest (): INTEGER;
+	  		
+		BEGIN
+	 		RETURN 2;
+		END funcTest;
+
+	PROCEDURE procTest (VAR a,b: INTEGER; VAR c: BOOLEAN);
+		
+		BEGIN
+		END procTest;
+					 
+BEGIN
+	
+	Alejo.age := 33;
+	
+	x := Alejo.age;
+	x := Alejo.guitars;
+	y := Alejo.isalive;
+
+END INTERMEDIO;

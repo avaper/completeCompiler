@@ -1,0 +1,37 @@
+MODULE LEVEL0;
+  	
+  TYPE
+	personTAD = record
+		
+		number	 : INTEGER;
+	 	agE		 : INTEGER;
+	 	guitars	 : INTEGER;
+	 	isHungry : BOOLEAN;
+
+  	END;
+
+  VAR Alejo	: personTAD;
+
+  PROCEDURE PROC (VAR X: personTAD);
+  		
+  BEGIN
+	
+	 X.age := 18;
+  	  
+  END PROC;
+
+BEGIN
+  
+  Alejo.age := 33;
+    		
+  WRITESTRING("Valor de Alejo.age (33): ");
+  WRITEINT(Alejo.age);
+  WRITELN;
+ 
+  PROC(Alejo);
+
+  WRITESTRING("Valor de Alejo.age (18): ");
+  WRITEINT(Alejo.age);
+  WRITELN;
+    
+END LEVEL0;

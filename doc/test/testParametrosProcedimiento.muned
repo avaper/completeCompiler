@@ -1,0 +1,40 @@
+MODULE LEVEL0;
+  	
+  VAR 
+    A : INTEGER;
+  	C : INTEGER;
+  	D : INTEGER;
+  	B : INTEGER;
+				   (* B  C  D  A *)
+  PROCEDURE PROC (VAR X, Y, Z, W: INTEGER);
+  		
+  BEGIN
+	
+	 X := 1;
+	 Y := 2;
+	 Z := 3;
+	 W := 4;
+  	  
+  END PROC;
+	
+BEGIN
+  
+  PROC(A, B, C, D);
+  		
+  WRITESTRING("Valor de A (1): ");
+  WRITEINT(A);
+  WRITELN;
+
+  WRITESTRING("Valor de B (2): ");
+  WRITEINT(B);
+  WRITELN;
+  
+  WRITESTRING("Valor de C (3): ");
+  WRITEINT(C);
+  WRITELN;
+
+  WRITESTRING("Valor de D (4): ");
+  WRITEINT(D);
+  WRITELN;
+    
+END LEVEL0;

@@ -1,0 +1,83 @@
+MODULE INTERMEDIO;
+
+  CONST
+  	MAX = 5;
+  	VERDAD = TRUE;
+  
+  TYPE
+  
+	personTAD = record
+	
+	 	agE	  	 : INTEGER;
+	 	isAlive	 : BOOLEAN;
+	 	friends  : INTEGER;
+	 	isWorking: BOOLEAN;
+
+  	END;
+  	
+  VAR 
+
+    X		: INTEGER;
+  	Alejo : personTAD;
+  	
+BEGIN
+
+  X := 42;
+  Alejo.age := 33;
+  Alejo.isAlive := TRUE;
+  Alejo.friends := X;
+  Alejo.isworking := VERDAD;
+  
+  WRITESTRING("Valor de X:");
+  WRITEINT(X);
+  WRITELN;
+  
+  WRITESTRING("Edad de Alejo: ");
+  WRITEINT(Alejo.age);
+  WRITELN;
+
+  WRITESTRING("Amigos de Alejo: ");
+  WRITEINT(Alejo.friends);
+  WRITELN;
+  
+  WRITESTRING("Amigos de Alejo + edad: ");
+  WRITEINT(Alejo.friends + Alejo.age);
+  WRITELN;
+  
+  IF VERDAD THEN
+  
+  	WRITESTRING("Test 1 OK");
+  	WRITELN;
+  
+  ELSE
+  	
+  	WRITESTRING("Error en el test 2");
+  	WRITELN;
+  	
+  END;
+  
+  IF Alejo.isWorking THEN
+  
+  	WRITESTRING("Test 2 OK");
+  	WRITELN;
+  
+  ELSE
+  	
+  	WRITESTRING("Error en el test 2");
+  	WRITELN;
+  	
+  END;
+
+  IF not Alejo.isWorking THEN
+  
+  	WRITESTRING("Error en el test 3");
+  	WRITELN;
+  
+  ELSE
+  	
+  	WRITESTRING("Test 3 OK");
+  	WRITELN;
+  	
+  END;
+ 	
+END INTERMEDIO;

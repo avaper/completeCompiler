@@ -1,0 +1,59 @@
+MODULE RECURSIVIDAD;
+
+	VAR global : INTEGER;
+     
+    	PROCEDURE recursivo(VAR x: INTEGER);
+    	
+    		VAR nonlocal : INTEGER;
+    		
+										    		PROCEDURE incrementar(VAR x: INTEGER);
+										    		
+										    			VAR local : INTEGER;
+										    			
+										    			BEGIN
+															
+															local := x;
+															
+										    				x := local + 1;
+										    				
+										    				WRITESTRING("local: ");
+												      		WRITEINT(local);
+												      		WRITELN;
+										    		
+												       		WRITESTRING("nonlocal: ");
+												      		WRITEINT(nonlocal);
+												      		WRITELN;
+												      		
+													      	WRITESTRING("global: ");
+													      	WRITEINT(global);
+													      	WRITELN;
+													      	
+										    		END incrementar;
+    	
+      		BEGIN
+      		
+	      		nonlocal := x;
+
+	      		IF nonlocal <> 10 THEN
+	      		
+	      			incrementar(global);
+	      			
+	      			WRITELN;
+	      			
+	      			Recursivo(global);
+	      		
+	      		END;
+
+      	END recursivo;
+      
+BEGIN
+
+	global := 1;
+	
+	Recursivo(global);
+	
+	WRITESTRING("FINAL: ");
+	WRITEINT(global);
+    WRITELN;
+    
+END RECURSIVIDAD;

@@ -1,0 +1,77 @@
+MODULE TEST;
+
+  VAR 
+  	Z: INTEGER;
+  	R: INTEGER;
+
+(*-----------------------------*)
+  PROCEDURE FUNC (VAR X: INTEGER): INTEGER;
+   
+    VAR    
+      Y : INTEGER;
+    
+ 	BEGIN
+  	  
+  	  Y := X + 1;
+  	    
+  	  RETURN Y;
+  	  
+  END FUNC;
+(*-----------------------------*)
+ 
+(*-----------------------------*)
+  PROCEDURE PROC (VAR X: INTEGER);
+   
+    VAR 
+      Y: INTEGER;
+    
+ 	BEGIN
+  	  
+  	  Y:= X + 1;
+  	  X:= Y;
+  	  
+  END PROC;
+(*-----------------------------*)
+ 	
+BEGIN
+
+  Z := 999;
+  
+  PROC(z);
+ 
+  IF Z <> 1000 THEN
+  			
+  	WRITESTRING("Error en el TEST de variables locales en procedimientos");
+  	WRITELN;
+  			
+  ELSE
+  		
+  	WRITESTRING("TEST de variables locales en procedimientos OK");
+  	WRITELN;
+
+  END;
+  		
+  WRITEINT(Z);
+  WRITELN;
+
+
+  Z := 1000;
+
+  R := FUNC(Z);
+
+  IF R <> 1001 THEN
+  			
+  	WRITESTRING("Error en el TEST de variables locales en funciones");
+  	WRITELN;
+  			
+  ELSE
+  		
+  	WRITESTRING("TEST de variables locales en funciones OK");
+  	WRITELN;
+
+  END;
+  		
+  WRITEINT(R);
+  WRITELN;
+
+END TEST;

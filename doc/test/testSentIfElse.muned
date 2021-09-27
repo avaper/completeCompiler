@@ -1,0 +1,15 @@
+MODULE SENTIFELSE;
+  	  
+  BEGIN
+  
+  IF 2 < 3 THEN
+  
+  	WRITELN;
+  
+  ELSE
+  
+  	WRITELN;
+  	
+  END;
+  
+END SENTIFELSE;

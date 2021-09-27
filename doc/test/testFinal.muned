@@ -1,0 +1,54 @@
+MODULE FINAL;
+
+(*
+  TYPE
+	personTAD = record
+	 	isAlive: BOOLEAN;
+	 	agE	: INTEGER;
+	 	other: INTEGER;
+  	END;
+ *)
+  	
+  VAR 
+  	z		: INTEGER;
+(*
+  	Alejo	: personTAD;
+*)
+  
+  PROCEDURE recursivo (VAR x: INTEGER);
+    
+ 	BEGIN
+  	  
+  		IF x < 10 THEN
+  			
+  			x := x + 1;
+  			recursivo(x);
+  			
+  		ELSE
+  		
+  			WRITESTRING("ACABAMOS, z vale dentro: ");
+  			WRITEINT(z);
+  			WRITELN;
+  			z := z + 2;
+  			WRITESTRING("La cambiamos dentro y vale: ");
+  			WRITEINT(z);
+  			WRITELN;
+
+  		END;
+  	  
+  END recursivo;
+   	
+BEGIN
+
+  z := 1;
+(*
+  Alejo.age := 1;
+*)
+  
+  recursivo(z);
+  
+  WRITESTRING("Z (3) = ");
+  WRITEINT(z);
+  WRITELN;
+
+END FINAL;

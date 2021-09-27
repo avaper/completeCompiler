@@ -1,0 +1,15 @@
+MODULE INTERMEDIO;
+
+  VAR 
+
+    X		: INTEGER;
+  
+BEGIN
+
+  X := 42;
+
+  WRITEINT(X);
+  WRITELN;
+
+  	
+END INTERMEDIO;

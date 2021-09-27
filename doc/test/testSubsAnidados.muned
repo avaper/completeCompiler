@@ -1,0 +1,31 @@
+MODULE SUBSANIDADOS;
+  		
+  PROCEDURE Sumar (VAR a: INTEGER; VAR b: INTEGER) : INTEGER;
+  	
+  	  PROCEDURE Sumar (VAR a: BOOLEAN) : BOOLEAN;
+
+ 		BEGIN
+
+ 			RETURN a; 
+ 			
+ 	  END Sumar; 	
+ 	
+ 	  (*
+  	  PROCEDURE Sumar (VAR a: BOOLEAN) : INTEGER;
+
+ 		BEGIN
+
+ 			RETURN a; 
+ 			
+ 	  END Sumar;  	
+ 	  *)
+ 	  
+ 	BEGIN
+
+ 		RETURN a; 
+ 			
+  END Sumar; 	
+ 	
+  BEGIN
+  
+END SUBSANIDADOS;

@@ -1,0 +1,44 @@
+MODULE obligatoria;
+
+ 	VAR 			
+   		 a: INTEGER;
+
+    PROCEDURE procesar(VAR X: INTEGER);
+ 
+	    PROCEDURE rellenar(VAR X: INTEGER);
+	    
+	    BEGIN
+	    
+	    	WRITESTRING("\nRellenando dato...\n");
+			X := 1234;
+			
+	    END rellenar;
+	    
+	    PROCEDURE imprimir(VAR X: INTEGER);
+	    
+	    BEGIN
+	    
+	    	WRITESTRING("\nImprimiendo dato...\n");
+			WRITEINT(X);
+			
+	    END imprimir;
+       
+    BEGIN
+ 
+	 	rellenar(X);
+		imprimir(X);   
+		
+    END procesar;
+        		 
+
+    
+BEGIN
+
+	WRITESTRING("TEST\n");	
+	
+	procesar(a);
+
+	WRITESTRING("\nA: ");
+	WRITEINT(a);
+	
+END obligatoria;

@@ -1,0 +1,85 @@
+MODULE INTERMEDIO;
+	      
+	VAR 	CONDICION, X, Y : BOOLEAN;
+					 
+BEGIN
+	
+	X := TRUE;
+	Y := FALSE;
+	
+	CONDICION := NOT Y;
+
+  IF X THEN
+  
+	WRITESTRING("Primer test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el primer test");	
+	WRITELN;
+
+  END;
+
+  IF X AND X THEN
+  
+	WRITESTRING("Segundo test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el segundo test");	
+	WRITELN;
+
+  END;
+  
+  IF X AND Y THEN
+  
+  	WRITESTRING("Error en el tercer test");
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Tercer test OK");	
+	WRITELN;
+
+  END;
+  
+  IF Y THEN
+  
+  	WRITESTRING("Error en el cuarto test");
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Cuarto test OK");	
+	WRITELN;
+
+  END;
+
+  IF NOT X THEN
+  
+  	WRITESTRING("Error en el quinto test");
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Quinto test OK");	
+	WRITELN;
+
+  END;
+
+
+  IF NOT Y THEN
+  
+	WRITESTRING("Sexto test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el sexto test");	
+	WRITELN;
+
+  END;
+
+END INTERMEDIO;

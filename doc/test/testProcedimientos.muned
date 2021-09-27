@@ -1,0 +1,30 @@
+MODULE PROCEDIMIENTOS;
+
+   PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR d: BOOLEAN; VAR e,z: INTEGER);
+      
+  (*
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR d: BOOLEAN; VAR a: INTEGER);
+  PROCEDURE Sumar (VAR a, a, c: INTEGER; VAR b: BOOLEAN);
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR a: BOOLEAN);
+  *)	
+
+ 	  
+ 	BEGIN
+ 			
+  	(*
+  	RETURN 3;
+  	*)
+  
+  END Sumar;
+ 
+(*
+  PROCEDURE Sumar (VAR a, b, c: INTEGER);
+   
+ 	BEGIN
+  
+  END Sumar; 
+*)
+ 	
+  BEGIN
+  
+END PROCEDIMIENTOS;

@@ -1,0 +1,88 @@
+MODULE TEST;
+	
+	VAR 	SUMA, X, Y : INTEGER;
+					 
+BEGIN
+	
+	x := 11;
+	y := 2;
+	suma := x + y;
+	
+  IF 2 < 5 THEN
+  
+	WRITESTRING("Primer test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el primer test");	
+	WRITELN;
+
+  END;
+
+  IF 5 < 5 THEN
+  
+  	WRITESTRING("Error en el segundo test");	
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Segundo test OK");	
+	WRITELN;
+
+  END; 
+  
+  IF 9 < 5 THEN
+  
+  	WRITESTRING("Error en el tercer test");	
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Tercer test OK");	
+	WRITELN;
+			
+  END; 
+  
+  IF 2 <> 5 THEN
+  
+	WRITESTRING("Cuarto test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el cuarto test");	
+	WRITELN;
+
+  END;
+
+  IF 5 <> 5 THEN
+  
+  	WRITESTRING("Error en el quinto test");	
+	WRITELN;
+	
+  ELSE
+  
+	WRITESTRING("Quinto test OK");	
+	WRITELN;
+
+  END; 
+  
+  IF 9 <> 5 THEN
+  
+	WRITESTRING("Sexto test OK");	
+	WRITELN;
+	
+  ELSE
+  
+  	WRITESTRING("Error en el sexto test");	
+	WRITELN;
+			
+  END;  
+  
+    WRITESTRING("Suma = ");
+	WRITEINT(suma);
+	
+	WRITELN;
+	
+END TEST;

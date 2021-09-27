@@ -1,0 +1,38 @@
+MODULE FULL;
+
+	CONST
+		TAM = 2;
+		
+	TYPE
+		TipoPersona = record
+	 		age	   : INTEGER;
+	  		isAlive: BOOLEAN;
+	    END;
+	    
+	    TipoEmpleado = record
+	    	sueldo : INTEGER;
+	    END;
+	       
+	VAR
+		condicion: BOOLEAN;
+		numero   : INTEGER;
+		Alejo	 : TipoPersona;
+		Becario  : TipoEmpleado;
+
+	PROCEDURE funcTest (VAR person: TipoPersona): INTEGER;
+	  		
+		BEGIN
+	 		RETURN 5;
+		END funcTest;
+	 
+	PROCEDURE procTest (VAR a: INTEGER);
+		
+		BEGIN
+		END procTest;
+		 
+BEGIN
+	
+	Alejo.age := 33;
+	numero := functest(Alejo);
+
+END FULL;

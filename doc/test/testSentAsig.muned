@@ -1,0 +1,35 @@
+MODULE ASIGNACION;
+
+  CONST
+  	C = 2;
+
+  TYPE
+	personTAD = record
+	 age	: INTEGER;
+	 isAlive: BOOLEAN;
+  END;
+	    
+  VAR a : INTEGER;
+  Alejo	: personTAD;
+  	  
+  BEGIN
+  
+  	a := 2;
+  	a := Alejo.age; 
+  	Alejo.age := 3;
+  	
+  	
+  	(*
+  	a := Alejo.isAlive;
+  	a := true;
+	C := 3;
+
+  	Alejo := 3;
+	a.age := 2;
+	C.age := 2;
+  	Alejo.error := 5;
+
+  	Alejo.age := TRUE;
+  	*)
+  
+END ASIGNACION;

@@ -1,0 +1,9 @@
+MODULE SENTES;
+  	  
+  BEGIN
+  
+	WRITESTRING("TEST");
+  	WRITEINT(2);
+  	WRITELN;
+  
+END SENTES;

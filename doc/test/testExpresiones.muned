@@ -1,0 +1,54 @@
+MODULE EXPRESIONES;
+
+  TYPE
+	personTAD = record
+	 age	: INTEGER;
+	 isAlive: BOOLEAN;
+  END;
+  
+  VAR a, b: INTEGER;
+  		 c: BOOLEAN;
+     Alejo: personTAD;
+
+  PROCEDURE func(VAR a: INTEGER; VAR c: BOOLEAN) : INTEGER;	
+ 	  
+ 	BEGIN
+		
+ 		RETURN 2;
+ 			
+  END func;
+
+  PROCEDURE proc (VAR a: INTEGER; VAR b: INTEGER);	
+ 	  
+ 	BEGIN
+ 			
+  END proc;
+  	
+  BEGIN
+	
+			
+	a := 2;
+	a := b;
+	a := func(a, c);
+	
+	
+	(*
+	a := func;
+	a := proc;
+  	c := not a;
+	a := a + c;
+  	a := c / b;
+	a := c AND b;  
+	a := c < b;	
+	a := a <> c;
+	a := error;
+	a := error.age;
+	a := C.error;
+	a := Alejo.error;
+	a := error();
+	a := proc();
+	a := func();
+	a := func(a, b);
+  	*)
+  	
+END EXPRESIONES;

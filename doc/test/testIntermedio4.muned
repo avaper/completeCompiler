@@ -1,0 +1,30 @@
+MODULE INTERMEDIO;
+	      
+	VAR 	CONDICION : INTEGER;
+					 
+BEGIN
+	
+	CONDICION := 0;
+
+  WHILE CONDICION <> 3 DO
+  
+  	WRITEINT(CONDICION + 1);
+  	WRITELN;
+  	
+  	CONDICION := CONDICION + 1;
+  	
+  END;
+
+  IF CONDICION <> 3 THEN
+  
+  	WRITESTRING("Error en el test");
+  	WRITELN;
+  
+  ELSE
+  	
+  	WRITESTRING("Test OK");
+  	WRITELN;
+  	
+  END;
+
+END INTERMEDIO;

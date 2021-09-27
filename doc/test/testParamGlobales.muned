@@ -1,0 +1,80 @@
+MODULE obligatoria;
+
+	TYPE TipoPersona = RECORD 
+                    edad   : INTEGER; 
+                    dni    : INTEGER; 
+                    casado : BOOLEAN;
+        END; 
+
+ 	VAR Alejo : TipoPersona;
+    	  vEdad: INTEGER;
+		   vDNI: INTEGER;
+		vCasado: BOOLEAN;
+		 	
+	PROCEDURE imprimir(VAR X: TipoPersona);
+	BEGIN
+
+    END imprimir;
+	    	    
+    PROCEDURE procesar(VAR X: TipoPersona; VAR e, d:INTEGER; VAR c:BOOLEAN);
+	    PROCEDURE rellenar; 
+	    BEGIN	
+			
+			WRITESTRING("\nAMBITO RELLENAR\n");
+	
+			WRITESTRING("\nImprimiendo REGISTRO...\n");
+			WRITESTRING("\nEdad: ");
+			WRITEINT(X.edad);
+			WRITESTRING("\nDNI: ");
+			WRITEINT(X.dni);
+			IF X.casado THEN WRITESTRING("\nEsta casado\n");
+			ELSE WRITESTRING("\nNo esta casado\n"); END;		
+			
+			WRITESTRING("\nImprimiendo VARS...\n");
+		 	WRITESTRING("\nEdad: ");
+			WRITEINT(E);
+			WRITESTRING("\nDNI: ");
+			WRITEINT(D);
+			WRITESTRING("\nCasado: ");
+			IF C THEN WRITESTRING("Esta casado\n");
+			ELSE WRITESTRING("No esta casado\n"); END;	
+					
+	    END rellenar;  	
+    BEGIN	
+	
+		WRITESTRING("\nAMBITO PROCESAR\n");
+	
+		WRITESTRING("\nImprimiendo REGISTRO...\n");
+		WRITESTRING("\nEdad: ");
+		WRITEINT(X.edad);
+		WRITESTRING("\nDNI: ");
+		WRITEINT(X.dni);
+		IF X.casado THEN WRITESTRING("\nEsta casado\n");
+		ELSE WRITESTRING("\nNo esta casado\n"); END;		
+		
+		WRITESTRING("\nImprimiendo VARS...\n");
+	 	WRITESTRING("\nEdad: ");
+		WRITEINT(E);
+		WRITESTRING("\nDNI: ");
+		WRITEINT(D);
+		WRITESTRING("\nCasado: ");
+		IF C THEN WRITESTRING("Esta casado\n");
+		ELSE WRITESTRING("No esta casado\n"); END;
+
+	 	rellenar;
+		
+    END procesar;
+
+BEGIN
+
+	Alejo.edad := 34;
+	Alejo.dni := 1234;
+	Alejo.casado := false;
+
+	vEdad   := 43;
+	vDNI    := 4321;
+	vCasado := true;
+	
+	procesar(Alejo, vEdad, vDNI, vCasado);
+	
+END obligatoria;

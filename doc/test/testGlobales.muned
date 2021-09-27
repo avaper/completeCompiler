@@ -1,0 +1,76 @@
+MODULE LEVEL0;
+  	
+  VAR 
+    GLOBAL1 : INTEGER;
+  	GLOBAL2 : INTEGER;
+ 
+(*-----------------------------*) 
+
+  PROCEDURE FUNC (): INTEGER;
+  
+  	VAR
+  		LOCAL: INTEGER;
+  		
+  BEGIN
+	
+	 LOCAL := 4321;
+	 GLOBAL1 := 1234;
+	 
+	 RETURN GLOBAL1;
+  	  
+  END FUNC;
+
+(*-----------------------------*)
+
+(*-----------------------------*) 
+  PROCEDURE PROC ();
+  
+  	VAR
+  		LOCAL: INTEGER;
+  		
+  BEGIN
+	
+	 LOCAL := 4321;
+	 GLOBAL1 := 4567;
+  	  
+  END PROC;
+(*-----------------------------*)
+	
+BEGIN
+  
+  PROC();
+
+  IF GLOBAL1 <> 4567 THEN
+  			
+  	WRITESTRING("Error en el TEST de variables globales en procedimientos");
+  	WRITELN;
+  			
+  ELSE
+  		
+  	WRITESTRING("TEST de variables globales en procedimientos OK");
+  	WRITELN;
+
+  END;
+  		
+  WRITEINT(GLOBAL1);
+  WRITELN;
+  
+  
+  GLOBAL2 := FUNC();
+
+  IF GLOBAL2 <> 1234 THEN
+  			
+  	WRITESTRING("Error en el TEST de variables globales en funciones");
+  	WRITELN;
+  			
+  ELSE
+  		
+  	WRITESTRING("TEST de variables globales en funciones OK");
+  	WRITELN;
+
+  END;
+  		
+  WRITEINT(GLOBAL2);
+  WRITELN;
+  
+END LEVEL0;

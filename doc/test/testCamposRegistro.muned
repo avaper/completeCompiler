@@ -1,0 +1,65 @@
+MODULE LEVEL0;
+  	
+  TYPE
+	personTAD = record
+		
+		number	 : INTEGER;
+	 	agE		 : INTEGER;
+	 	guitars	 : INTEGER;
+	 	isHungry : BOOLEAN;
+
+  	END;
+
+  VAR Alejo	: personTAD;
+
+(*
+  PROCEDURE PROC (VAR X: personTAD);
+  		
+  BEGIN
+	
+	 X.age := 33;
+  	  
+  END PROC;
+*)
+	
+BEGIN
+
+(*  
+  PROC(Alejo);
+*)
+
+  Alejo.number := 1234;
+  
+  WRITESTRING("Valor de Alejo.number (1234): ");
+  WRITEINT(Alejo.number);
+  WRITELN;
+  
+
+  Alejo.age := 33;
+    		
+  WRITESTRING("Valor de Alejo.age (33): ");
+  WRITEINT(Alejo.age);
+  WRITELN;
+ 
+
+  Alejo.guitars := 5;
+    		
+  WRITESTRING("Valor de Alejo.guitars (5): ");
+  WRITEINT(Alejo.guitars);
+  WRITELN;
+ 
+  Alejo.isHungry := true;
+  
+  IF Alejo.isHungry THEN
+  
+  	  WRITESTRING("Valor de Alejo.isHungry (true): true");
+  	  WRITELN;
+  
+  ELSE
+  
+  	  WRITESTRING("Valor de Alejo.isHungry (true): false");
+  	  WRITELN;  	  
+  
+  END;
+    
+END LEVEL0;

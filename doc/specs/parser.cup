@@ -1,0 +1,1529 @@
+package compiler.syntax;
+
+// Declaracion de importaciones 
+//(No modificar las proporcionadas. Se pueden agregar mas)
+
+import java_cup.runtime.Symbol;
+import java.util.*;
+
+import es.uned.lsi.compiler.lexical.*;
+import es.uned.lsi.compiler.code.*;
+import es.uned.lsi.compiler.intermediate.*;
+import es.uned.lsi.compiler.semantic.*;
+import es.uned.lsi.compiler.semantic.symbol.*;
+import es.uned.lsi.compiler.semantic.type.*;
+import es.uned.lsi.compiler.syntax.*;
+
+import compiler.CompilerContext;
+import compiler.lexical.*;
+import compiler.syntax.nonTerminal.*;
+import compiler.semantic.*;
+import compiler.semantic.symbol.*;
+import compiler.semantic.type.*;
+import compiler.intermediate.*;
+import compiler.code.*;
+
+// Declaracion del codigo de usuario
+
+action code   
+{:
+	SyntaxErrorManager   syntaxErrorManager   = CompilerContext.getSyntaxErrorManager();
+	SemanticErrorManager semanticErrorManager = CompilerContext.getSemanticErrorManager ();
+	ScopeManagerIF       scopeManager         = CompilerContext.getScopeManager ();
+	FinalCodeFactoryIF   finalCodeFactory     = CompilerContext.getFinalCodeFactory ();
+
+	LabelFactory lf = new LabelFactory();
+	List<QuadrupleIF> stringList = new ArrayList<QuadrupleIF>();
+	HashMap<String, String> calls = new HashMap<String, String>();
+
+	int nesting = 0;
+:}	
+
+parser code 
+{:
+	SyntaxErrorManager syntaxErrorManager = CompilerContext.getSyntaxErrorManager();
+	
+	public void syntax_error(Symbol symbol)
+	{ 
+	    Token token = (Token) symbol.value;
+	    syntaxErrorManager.syntaxError ("Error sintactico", token);	    
+	}
+		
+	public void unrecovered_syntax_error(java_cup.runtime.Symbol symbol)
+	{	
+	    Token token = (Token) symbol.value;
+	    syntaxErrorManager.syntaxFatalError ("Error fatal", token);
+	}
+:}
+
+// Declaracion de terminales
+terminal Token TLTRUE, TLFALSE, TLINT, TLSTRING, TIDENTIFICADOR;
+terminal Token TAND, TNOT;
+terminal Token TBEGIN, TEND;
+terminal Token TIF, TTHEN, TELSE;
+terminal Token TMODULE, TPROCEDURE, TRETURN;
+terminal Token TDO, TWHILE;
+terminal Token TWRITESTRING, TWRITEINT, TWRITELN;
+terminal Token TBOOLEAN, TCONST, TINTEGER, TRECORD, TTYPE, TVAR;
+terminal Token TPTOCOMA, TPARI, TPARD, TCOMA, TDOSPTS, TIGUAL;
+terminal Token TSUMA, TDIVIDE, TASSIGN, TMENOR, TDISTINTO, TPUNTO;
+
+// Declaracion de no terminales
+non terminal  					program;
+non terminal Axiom		axiom;
+non terminal            Constante ctes;
+non terminal            Constante ctesLista;
+non terminal            Constante cte;
+non terminal            Constante cteValor;
+
+non terminal             Registro tipos;
+non terminal             Registro tiposLista;
+non terminal             Registro tipo;
+non terminal             Registro registro;
+non terminal             Registro regCampos;
+
+non terminal             RegCampo regCampo;			
+
+non terminal          	Expresion vars;
+non terminal          	Expresion varsLista;
+non terminal          	Expresion var;
+non terminal          	Expresion varTipo;
+
+non terminal           Sentencias subs;
+non terminal            Subrutina subDecl;
+non terminal      		Subrutina subParams;
+non terminal      		Subrutina subParamsCuerpo;
+
+non terminal          VarSeqDeIds subPar;
+
+non terminal            	 Sent subReturn;		
+
+non terminal           Sentencias sentencias;
+
+non terminal                 Sent sent;
+non terminal                 Sent sentAsign;
+non terminal               	 Sent sentES;
+non terminal           		 Sent sentReturn;
+non terminal                 Sent sentCall;
+
+non terminal       SentCallParams sentCallParams;	
+
+non terminal                 Sent sentIf;
+non terminal           Sentencias sentElse;
+non terminal                 Sent sentWhile;
+
+non terminal            Expresion expresion;
+non terminal        	Expresion tipoPrimitivo;
+
+non terminal           Sentencias cuerpoModulo;
+non terminal           Sentencias finalModulo;
+
+non terminal          VarSeqDeIds varSeqDeIds;
+non terminal                      ntPtoComa;
+
+// Declaracion de relaciones de precedencia (de menos a mas)
+precedence nonassoc TMENOR, TDISTINTO;
+precedence left     TSUMA;
+precedence left     TDIVIDE, TAND;
+precedence right    TNOT;
+precedence left     TPUNTO, TPARI, TPARD;
+
+// Declaracion de reglas de produccion
+// El proceso de analisis ha de empezar emitiendo el mensaje 'Starting parsing...' y
+// finalizar emitiendo el mensaje 'Parsing process finished' en el caso de no existir 
+// ningun error no recuperable.
+
+start with program;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									PROGRAMA PRINCIPAL									 		 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+program ::= 
+  		{: 
+  		    syntaxErrorManager.syntaxInfo ("Starting parsing..."); 
+  		:}
+	  	axiom:ax
+	  	{:
+
+		// CODIGO INTERMEDIO
+
+			List<ScopeIF> scopes = scopeManager.getAllScopes();
+
+			for ( ScopeIF scope: scopes )
+			{
+				IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scope);
+
+				if ( scope.getLevel() == 0 )
+				{
+					Value nest = new Value(nesting);
+ 
+					cb.addQuadruple("DISPLAY", nest);
+					cb.addQuadruple("DATA");
+	
+					int sizeRA = scope.getTemporalTable().getSize() + 4;
+
+					for ( SymbolIF symbol: scope.getSymbolTable().getSymbols() )
+					{
+						if ( symbol instanceof SymbolVariable ) 
+						{
+							int address = ((SymbolVariable) symbol).getAddress();				
+							
+							if ( scope.getSymbolTable().getSymbol(symbol.getName()).getType() instanceof TypeRecord )
+							{				
+								for ( RegCampo campo: ((TypeRecord) symbol.getType()).getFields() )
+								{
+									Label var = new Label(symbol.getName() + "_" + campo.getName());
+									cb.addQuadruple("GLOBALVARIABLE", var, 0);
+									sizeRA ++;
+								}
+							}
+							else
+							{
+								Label var = new Label(symbol.getName());
+								cb.addQuadruple("GLOBALVARIABLE", var, 0);
+								sizeRA ++;
+							}
+						}
+					}
+
+					TemporalFactoryIF tf = new TemporalFactory(scope);
+					TemporalIF temp = tf.create();
+					
+					cb.addQuadruple("GLOBALPOINTER", temp, sizeRA);
+				}
+
+				int addressRA = 4;
+
+				int symbols = 0;
+
+				for ( SymbolIF symbol: scope.getSymbolTable().getSymbols() )
+				{
+					if ( symbol instanceof SymbolParameter ) 
+					{
+						int pos = ((SymbolParameter) symbol).getPosition();
+						((SymbolParameter) symbol).setAddress(addressRA + pos);				
+						symbols ++;
+					}
+				}
+				
+				addressRA += symbols;
+
+				if ( scope.getLevel() != 0 ) addressRA++;
+
+				for ( SymbolIF symbol: scope.getSymbolTable().getSymbols() )
+				{
+					if ( symbol instanceof SymbolVariable ) 
+					{
+						((SymbolVariable) symbol).setAddress(addressRA);
+						addressRA += symbol.getType().getSize();
+					}
+				}
+
+				for ( TemporalIF temporal: scope.getTemporalTable().getTemporals() )
+				{
+					if ( temporal instanceof Temporal ) 
+					{
+						((Temporal) temporal).setAddress(addressRA);					
+						addressRA += ((Temporal) temporal).getSize();
+					}
+				}
+
+				cb.addQuadruples(ax.getIntermediateCode());
+				
+				if ( scope.getLevel() == 0 ) cb.addQuadruples(stringList);
+
+				ax.setIntermediateCode(cb.create());
+			}
+
+	  		// No modificar esta estructura, aunque se pueden a�adir mas acciones semanticas
+	
+	  		List intermediateCode = ax.getIntermediateCode ();
+			finalCodeFactory.setEnvironment(CompilerContext.getExecutionEnvironment());
+	  		finalCodeFactory.create (intermediateCode);
+
+	  		// En caso de no comentarse las dos sentencias anteriores puede generar una excepcion
+	  		// en las llamadas a cupTest si el compilador no esta completo. Esto es debido a que 
+	  		// aun no se tendra implementada la generacion de codigo intermedio ni final.
+	  		// Para la entrega final deberan descomentarse y usarse.
+	  		
+	  		syntaxErrorManager.syntaxInfo ("Parsing process ended.");
+	  	:}
+	;
+	
+axiom ::=
+        TMODULE TIDENTIFICADOR:id 
+        {:
+			ScopeIF scope = scopeManager.openScope(id.getLexema().toUpperCase());
+        	TypeTableIF typeTable = scope.getTypeTable();        	        	
+
+        	typeTable.addType(new TypeInteger(scope));
+        	typeTable.addType(new TypeBoolean(scope));
+        :} 
+        ntPtoComa cuerpoModulo:cm
+
+		// CODIGO INTERMEDIO
+
+		{:
+			Axiom axiom = new AxiomImpl();
+			axiom.setIntermediateCode(cm.getIntermediateCode());
+
+			RESULT = axiom;
+		:}
+        | TMODULE error {: semanticErrorManager.semanticFatalError("Se esperaba un identificador para el modulo"); :} 
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									DEFINICION DE CONSTANTES									 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+ctes ::=
+        TCONST ctesLista
+        | // Nada
+    ;
+    
+ctesLista ::=
+        cte ctesLista
+        | cte          
+    ; 
+    
+cte ::=
+        TIDENTIFICADOR:id TIGUAL cteValor:val ntPtoComa 
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			ScopeIF scope = scopeManager.getCurrentScope();
+        	SymbolTableIF symbolTable = scope.getSymbolTable();
+
+        	if ( symbolTable.containsSymbol(id.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Declaracion de constante. Simbolo " +  id.getLexema().toUpperCase() +  " ya declarado");
+ 
+        	symbolTable.addSymbol(new SymbolConstant(scope, id.getLexema().toUpperCase(), val.getType(), val.getValue()));
+        :}
+        | error {: semanticErrorManager.semanticFatalError("Error en la zona de declaracion de constantes del ambito " + scopeManager.getCurrentScope().getName()); :}         
+    ;
+    
+cteValor ::=
+        TLTRUE:val {: RESULT = new Constante(new TypeBoolean(scopeManager.getCurrentScope()), "1"); :}   
+        | TLFALSE:val {: RESULT = new Constante(new TypeBoolean(scopeManager.getCurrentScope()), "0"); :}    
+        | TLINT:val {: RESULT = new Constante(new TypeInteger(scopeManager.getCurrentScope()), val.getLexema()); :}  
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									DEFINICION DE TIPOS											 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+tipos ::=
+        TTYPE tiposLista
+        | // Nada
+	;
+	
+tiposLista ::= 
+		tipo tiposLista            
+        | tipo
+	;
+	
+tipo ::= 
+		TIDENTIFICADOR:id TIGUAL registro:record ntPtoComa
+		{:
+
+		// COMPROBACIONES SEMANTICAS
+
+			ScopeIF scope = scopeManager.getCurrentScope();
+        	TypeTableIF typeTable = scope.getTypeTable();
+        	
+        	if ( scopeManager.containsType(id.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Declaracion de registro. Simbolo " + id.getLexema().toUpperCase() + " ya declarado");
+ 	
+        	typeTable.addType (new TypeRecord(scope, id.getLexema().toUpperCase(), record.getFields()));
+		:} 
+        | error {: semanticErrorManager.semanticFatalError("Error en la zona de declaracion de tipos del ambito " + scopeManager.getCurrentScope().getName()); :}  
+    ;
+    
+registro ::=
+        TRECORD regCampos:fields TEND 
+        {: 
+			fields.setPositions();
+			RESULT = fields; 
+		:}
+        | error {: semanticErrorManager.semanticFatalError("Declaracion de campos vacia"); :}      
+    ;
+    
+regCampos ::=
+        regCampo:field regCampos:fields
+        {:   
+
+		// COMPROBACIONES SEMANTICAS
+   
+	        if ( fields.containsField(field.getName()) ) semanticErrorManager.semanticFatalError("Linea " + field.getLine() + ". Declaracion de campo de registro. Simbolo " + field.getName() + " ya declarado en el registro");
+ 
+        	fields.addField(field);
+
+        	RESULT = fields;
+        :}
+        | regCampo:field {: RESULT = new Registro(field); :}
+    ;
+    
+regCampo ::=
+        TIDENTIFICADOR:id TDOSPTS tipoPrimitivo:type ntPtoComa {: RESULT = new RegCampo(id.getLexema().toUpperCase(), type.getType(), id.getLine()); :}
+        | TIDENTIFICADOR:id1 TDOSPTS TIDENTIFICADOR:id2 ntPtoComa {: semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Asignacion a campo " + id1.getLexema().toUpperCase() + " de tipo no primitivo " + id2.getLexema().toUpperCase()); :}
+		| error {: semanticErrorManager.semanticFatalError("Error en declaracion de campos de registro en el ambito " + scopeManager.getCurrentScope().getName()); :}  
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									DEFINICION DE VARIABLES										 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+vars ::=
+        TVAR varsLista
+        | // Nada
+    ; 
+    
+varsLista ::=
+        var varsLista 
+        | var 
+    ;
+    
+var ::=
+        varSeqDeIds:seq TDOSPTS:dpt varTipo:t ntPtoComa
+        {:	
+
+		// COMPROBACIONES SEMANTICAS
+
+        	SymbolTableIF symbolTable = scopeManager.getCurrentScope().getSymbolTable();
+        	
+        	for ( String id: seq.getIDs() )
+        	{
+        		if ( symbolTable.containsSymbol(id.toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + dpt.getLine() + ". Declaracion de variable. Simbolo " + id + " ya declarado");
+ 
+        		symbolTable.addSymbol(new SymbolVariable(scopeManager.getCurrentScope(), id.toUpperCase(), t.getType()));		
+        	}
+        :}
+        | error {: semanticErrorManager.semanticFatalError("Declaracion de variable invalida"); :}  
+    ;
+    
+varTipo ::=
+        tipoPrimitivo:t  {: RESULT = new Expresion(t.getType()); :}
+        | TIDENTIFICADOR:id
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+		
+			if ( ! scopeManager.containsType(id.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Tipo " + id.getLexema().toUpperCase() + " no declarado");
+
+        	RESULT = new Expresion(scopeManager.searchType(id.getLexema().toUpperCase()));	
+		:}
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									DEFINICION DE SUBPROGRAMAS									 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+subs ::=
+        subs:su TPROCEDURE subDecl cuerpoModulo:cm
+        {: 
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			cb.addQuadruples(cm.getIntermediateCode());
+			cb.addQuadruples(su.getIntermediateCode());
+
+			cm.setIntermediateCode(cb.create());
+
+			RESULT = cm; 
+		:}
+        | // Nada
+		{: RESULT = new Sentencias(); :}
+    ;
+
+subDecl ::= 
+		TIDENTIFICADOR:id subParams:sParams subReturn:subRet ntPtoComa
+		{:	
+
+		// COMPROBACIONES SEMANTICAS
+
+			ScopeIF scope = scopeManager.getCurrentScope();
+			TypeTableIF typeTable = scope.getTypeTable();
+			SymbolTableIF symbolTable = scope.getSymbolTable();
+
+			if ( symbolTable.containsSymbol(id.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Declaracion de subrutina. Simbolo " + id.getLexema().toUpperCase() + " ya declarado");
+
+    		ScopeIF newScope = scopeManager.openScope(id.getLexema().toUpperCase());
+    		SymbolTableIF newSymbolTable = newScope.getSymbolTable();
+
+			TypeProcedure typeSubroutine = new TypeProcedure(scope, id.getLexema().toUpperCase());
+			SymbolIF symbolSubroutine = new SymbolProcedure(scope, id.getLexema().toUpperCase(), typeSubroutine);
+
+    		if ( subRet.getReturnType() != null )
+			{	
+				typeSubroutine = new TypeFunction(scope, id.getLexema().toUpperCase(), subRet.getReturnType());
+				symbolSubroutine = new SymbolFunction(scope, id.getLexema().toUpperCase(), typeSubroutine);
+			}
+			
+			typeSubroutine.addParamSeq(sParams.getParamSeq(), newScope);
+
+			int position = 0;
+
+			for ( SymbolParameter param: ((TypeProcedure) typeSubroutine).getParameters() )
+			{
+				param.setPosition(position);
+
+				position ++;
+
+				newSymbolTable.addSymbol(param);
+			}
+ 
+			typeTable.addType(id.getLexema().toUpperCase(), typeSubroutine);
+			symbolTable.addSymbol(id.getLexema().toUpperCase(), symbolSubroutine);
+
+		// CODIGO INTERMEDIO
+
+			if ( nesting < newScope.getLevel() ) nesting = newScope.getLevel();
+		:}
+        | error {: semanticErrorManager.semanticFatalError("Se esperaba un identificador para la subrutina"); :}  
+     ; 
+     
+subParams::= 
+        TPARI TPARD {: RESULT = new Subrutina(); :}
+        | TPARI subParamsCuerpo:pars TPARD {: RESULT = new Subrutina(pars.getParamSeq()); :} 
+        | // Nada
+		{: RESULT = new Subrutina(); :}                      
+    ; 
+      
+subParamsCuerpo::=
+        subPar:param ntPtoComa subParamsCuerpo:cuerpo
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			if ( cuerpo.containsParam(param) != null ) semanticErrorManager.semanticFatalError("Linea " + param.getLine() + ". Declaracion de parametros en subrutina. Parametro " + cuerpo.containsParam(param) + " duplicado");
+ 
+        	cuerpo.addParameter(param);
+        	
+        	RESULT = cuerpo;
+        :} 
+        | subPar:param {: RESULT = new Subrutina(param); :}        
+    ;
+       
+subPar::= 
+        TVAR varSeqDeIds:seq TDOSPTS varTipo:t {: RESULT = new VarSeqDeIds(t.getType(), seq.getIDs(), seq.getLine()); :}
+        | error {: semanticErrorManager.semanticFatalError("Definicion de subrutina. Error en el formato de parametros"); :}   
+    ;
+    
+subReturn::=
+        TDOSPTS tipoPrimitivo:t {: RESULT = new Sent(t.getType()); :}        
+        | // Nada
+        {: RESULT = new Sent(); :}  
+        | error {: semanticErrorManager.semanticFatalError("Tipo de retorno de funcion no especificado"); :}       
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									       SENTENCIAS			        						 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+sentencias ::= 
+        sent:sentence ntPtoComa sentencias:sentences
+        {:
+			sentences.addSentence(sentence);
+			
+		// CODIGO INTERMEDIO
+			
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			cb.addQuadruples(sentence.getIntermediateCode());
+			cb.addQuadruples(sentences.getIntermediateCode());
+
+			sentences.setIntermediateCode(cb.create());
+        	
+			RESULT = sentences;
+        :}         
+        | // Nada
+        {: RESULT = new Sentencias(); :}
+        | error {: semanticErrorManager.semanticFatalError("Error en sentencias"); :}
+    ;
+    
+sent::= 
+
+		// CODIGO INTERMEDIO
+
+		sentAsign:sentAsig {: RESULT = sentAsig; :}    
+        | sentES:sentE {: RESULT = sentE; :}           
+        | sentReturn:sentR {: RESULT = sentR; :}
+        | sentIf:sentI TEND {: RESULT = sentI; :}   
+        | sentWhile:sentW TEND {: RESULT = sentW; :}           
+        | sentCall:sentC {: RESULT = sentC; :}   
+        | error {: semanticErrorManager.semanticFatalError("Error en sentencia"); :}
+    ;
+    
+sentAsign::=
+        TIDENTIFICADOR:id TASSIGN expresion:e
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+
+ 			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Asignacion a simbolo " + id.getLexema().toUpperCase() + " no definido");
+ 			
+			if ( ! (symbol instanceof SymbolVariable) && ! (symbol instanceof SymbolParameter) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Asignacion a simbolo no variable " + id.getLexema().toUpperCase());
+ 
+			if ( symbol.getType() instanceof TypeRecord ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Asignacion a registro " + id.getLexema().toUpperCase());
+ 
+        	if ( ! symbol.getType().getName().equals(e.getType().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Asignacion de tipo " + e.getType().getName() + " a tipo " + symbol.getType().getName());
+
+		// CODIGO INTERMEDIO
+
+			Sent sentAsig = new Sent();
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+
+			TemporalIF temp = tf.create();
+			TemporalIF eTemp = e.getTemporal();
+			Variable var = new Variable(id.getLexema().toUpperCase(), symbol.getScope());
+
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("MVA", temp, var);
+			cb.addQuadruple("STP", temp, eTemp);
+
+			sentAsig.setTemporal(eTemp);
+			sentAsig.setIntermediateCode(cb.create());
+
+			RESULT = sentAsig;		
+        :}
+        | TIDENTIFICADOR:id1 TPUNTO TIDENTIFICADOR:id2 TASSIGN expresion:e
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	SymbolIF symbol = scopeManager.searchSymbol(id1.getLexema().toUpperCase());
+			
+ 			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Asignacion a simbolo " + id1.getLexema().toUpperCase() + " no definido");
+     	
+			if ( ! (symbol instanceof SymbolVariable) && ! (symbol instanceof SymbolParameter) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Asignacion a simbolo no variable " + id1.getLexema().toUpperCase());
+ 
+			if ( ! (symbol.getType() instanceof TypeRecord) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". El simbolo " + id1.getLexema().toUpperCase() + " no es un registro");
+			
+			if ( ! ((TypeRecord) symbol.getType()).containsField(id2.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". El registro " + id1.getLexema().toUpperCase() + " no contiene el campo " + id2.getLexema().toUpperCase());	
+ 
+        	if ( ! ((TypeRecord) symbol.getType()).getField(id2.getLexema().toUpperCase()).getType().getName().equals(e.getType().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Asignacion a campo de tipo " + e.getType().getName() + " a tipo " + ((TypeRecord) symbol.getType()).getField(id2.getLexema().toUpperCase()).getType().getName());
+
+		// CODIGO INTERMEDIO
+
+			Sent sentAsig = new Sent();
+			
+			int position = ((TypeRecord) symbol.getType()).getField(id2.getLexema()).getPosition();
+
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			TemporalIF temp = tf.create();
+			TemporalIF temp2 = tf.create();
+			TemporalIF temp3 = tf.create();
+			TemporalIF eTemp = e.getTemporal();
+			Variable var = new Variable(id1.getLexema().toUpperCase(), symbol.getScope());
+
+			cb.addQuadruples(e.getIntermediateCode());
+
+			// Direccion base
+			cb.addQuadruple("MVA", temp, var);		
+
+			// Desplazamiento
+			cb.addQuadruple("MV", temp2, position);
+
+			// Resta
+			cb.addQuadruple("SUB", temp3, temp, temp2);
+
+			cb.addQuadruple("STP", temp3, eTemp);
+
+			sentAsig.setTemporal(eTemp);
+			sentAsig.setIntermediateCode(cb.create());
+
+			RESULT = sentAsig;	   		
+        :}
+    ;
+
+sentWhile::= 
+		TWHILE:twl expresion:e TDO sentencias:sentences
+		{: 
+
+		// COMPROBACIONES SEMANTICAS
+
+			if ( ! (e.getType() instanceof TypeBoolean) ) semanticErrorManager.semanticFatalError("Linea " + twl.getLine() + " .La condicion de la sentencia WHILE no es de tipo BOOLEAN");
+
+			Sent sent = new Sent();
+
+			if ( sentences.isReturnContained() ) 
+			{
+				if ( ! sentences.isBalanced() ) sent.setBalanced(false);
+
+				sent.setReturnType(sentences.getReturnType());
+			}
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+	
+			LabelIF labelEndWhile = lf.create();
+			LabelIF labelWhile = lf.create();		
+			TemporalIF temp = e.getTemporal();
+
+			cb.addQuadruple("INL", labelEndWhile);
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("BRF", temp, labelWhile);
+			cb.addQuadruples(sentences.getIntermediateCode());
+			cb.addQuadruple("BR", labelEndWhile);
+			cb.addQuadruple("INL", labelWhile);
+			
+			sent.setIntermediateCode(cb.create());
+
+			RESULT = sent;
+		:}
+	;
+
+sentIf::=         
+		TIF:tif expresion:e TTHEN sentencias:sentences sentElse:sentE 
+		{: 
+
+		// COMPROBACIONES SEMANTICAS
+
+			if ( ! (e.getType() instanceof TypeBoolean) ) semanticErrorManager.semanticFatalError("Linea " + tif.getLine() + " .La condicion de la sentencia IF no es de tipo BOOLEAN");
+
+			Sent sent = new Sent();
+
+			if ( sentences.isReturnContained() || sentE.isReturnContained() ) 
+			{
+				if ( !(sentences.isReturnContained() && sentE.isReturnContained()) ) sent.setBalanced(false);
+
+				if ( sentences.isReturnContained() ) sent.setReturnType(sentences.getReturnType());
+				else sent.setReturnType(sentE.getReturnType());
+			}
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			LabelIF labelEndIf = lf.create();
+			LabelIF labelElse = lf.create();		
+			TemporalIF temp = e.getTemporal();
+
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("BRF", temp, labelElse);
+			cb.addQuadruples(sentences.getIntermediateCode());
+			cb.addQuadruple("BR", labelEndIf);
+			
+			cb.addQuadruple("INL", labelElse);
+			cb.addQuadruples(sentE.getIntermediateCode());
+			cb.addQuadruple("INL", labelEndIf);
+			
+			sent.setIntermediateCode(cb.create());
+			
+			RESULT = sent; 
+		:}  
+	;
+
+sentElse::=
+        TELSE sentencias:sentences {: RESULT = sentences; :}
+        | // Nada
+		{: RESULT = new Sentencias(); :}
+    ;
+    
+sentES::=
+        TWRITESTRING TPARI TLSTRING:st TPARD
+        {: 
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent();
+
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			LabelIF labelES = lf.create();
+			TemporalIF temp = tf.create();			
+
+			cb.addQuadruple("WRITESTR", temp, labelES);
+			
+			sent.setIntermediateCode(cb.create());
+
+			stringList.add(new Quadruple("STRINGDATA", new Label(st.getLexema()), labelES));
+
+			RESULT = sent;
+		:}
+        | TWRITEINT:tes TPARI expresion:e TPARD 
+        {: 
+
+		// COMPROBACIONES SEMANTICAS
+
+			if ( ! (e.getType() instanceof TypeInteger) ) semanticErrorManager.semanticFatalError("Linea " + tes.getLine() + ". El parametro de WRITEINT no es de tipo INTEGER");
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent();
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			TemporalIF temp = e.getTemporal();
+			
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("WRITEINT", temp);
+			
+			sent.setIntermediateCode(cb.create());
+
+			RESULT = sent; 
+		:}  
+        | TWRITELN
+        {:
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent();
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			cb.addQuadruple("WRITELN");
+			
+			sent.setIntermediateCode(cb.create());
+
+			RESULT = sent;			
+		:}
+    ;
+    
+sentReturn::=
+        TRETURN:tRet expresion:e
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+	
+			SymbolIF symbol = scopeManager.getParentScope().getSymbolTable().getSymbol(scopeManager.getCurrentScope().getName());
+
+			if ( ! (symbol instanceof SymbolFunction) ) semanticErrorManager.semanticFatalError("Linea " + tRet.getLine() + ". Sentencia RETURN dentro del procedimiento " + scopeManager.getCurrentScope().getName());
+		 			
+			if ( ((TypeFunction) symbol.getType()).getReturnType().getName() != e.getType().getName() ) semanticErrorManager.semanticFatalError("Linea " + tRet.getLine() + ". El tipo de retorno " + e.getType().getName() + " no coincide con el de la funcion " + scopeManager.getCurrentScope().getName() + " " + ((TypeFunction) symbol.getType()).getReturnType().getName());
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent(e.getType());
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(symbol.getScope());
+
+			TemporalIF temp = e.getTemporal();
+			LabelIF labelRet = lf.create("FIN_" + scopeManager.getParentScope().getName() + "_" + scopeManager.getCurrentScope().getName());
+
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("RET", labelRet, temp);
+
+			sent.setTemporal(temp);
+			sent.setIntermediateCode(cb.create());
+
+        	RESULT = sent;
+        :}   
+    ;
+
+sentCall::=
+        TIDENTIFICADOR:id TPARI sentCallParams:params TPARD
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+        	
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Procedimiento " + id.getLexema().toUpperCase() + " no definido");
+			
+			if ( symbol.getType() instanceof TypeFunction ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". " + id.getLexema().toUpperCase() + " no es un procedimiento");
+ 
+			if ( params.getNumParams() != ((TypeProcedure) symbol.getType()).getNumParams() ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El numero de parametros del procedimiento " + id.getLexema().toUpperCase() + " no coincide con los de la llamada");
+	
+			if ( params.compareTo(((TypeProcedure) symbol.getType()).getParameters()) != null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El tipo del parametro " + params.compareTo(((TypeProcedure) symbol.getType()).getParameters()).getType().getName() + " no coincide con el esperado");
+
+			for ( Map.Entry<String, String> call: calls.entrySet() )
+			{
+				if ( call.getKey().equals(id.getLexema().toUpperCase()) && call.getValue().equals(scopeManager.getCurrentScope().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Recursividad indirecta no soportada");
+			}
+
+			if ( scopeManager.getCurrentScope().getLevel() != 0 && !scopeManager.getCurrentScope().getName().equals(id.getLexema().toUpperCase()) ) calls.put(scopeManager.getCurrentScope().getName(), id.getLexema().toUpperCase());
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent();
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			LabelIF labelProc = new Label("L_" + symbol.getScope().getName() + "_" + id.getLexema().toUpperCase(), symbol.getType());
+
+			cb.addQuadruple("ENTER", labelProc);
+			cb.addQuadruples(params.getIntermediateCode());
+			cb.addQuadruple("CALL", labelProc);
+
+			sent.setIntermediateCode(cb.create());
+
+			RESULT = sent;
+		:}
+        | TIDENTIFICADOR:id
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+        	
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Simbolo " + id.getLexema().toUpperCase() + " no definido");
+			
+			if ( symbol.getType() instanceof TypeFunction ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". " + id.getLexema().toUpperCase() + " no es un procedimiento");
+
+			if ( symbol.getType() instanceof TypeProcedure && ((TypeProcedure) symbol.getType()).getNumParams() > 0 ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El numero de parametros del procedimiento " + id.getLexema().toUpperCase() + " no coincide con los de la llamada");
+
+			for ( Map.Entry<String, String> call: calls.entrySet() )
+			{
+				if ( call.getKey().equals(id.getLexema().toUpperCase()) && call.getValue().equals(scopeManager.getCurrentScope().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Recursividad indirecta no soportada");
+			}
+
+			if ( scopeManager.getCurrentScope().getLevel() != 0 && !scopeManager.getCurrentScope().getName().equals(id.getLexema().toUpperCase()) ) calls.put(scopeManager.getCurrentScope().getName(), id.getLexema().toUpperCase());
+
+		// CODIGO INTERMEDIO
+
+			Sent sent = new Sent();
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+
+			LabelIF labelProc = new Label("L_" + symbol.getScope().getName() + "_" + id.getLexema().toUpperCase(), symbol.getType());
+
+			cb.addQuadruple("ENTER", labelProc);
+			cb.addQuadruple("CALL", labelProc);
+
+			sent.setIntermediateCode(cb.create());
+			
+			RESULT = sent;
+		:}
+    ;
+
+sentCallParams::= 
+        TIDENTIFICADOR:id
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF param = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+
+			if ( param == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Simbolo " + id.getLexema().toUpperCase() + " no definido");
+
+			if ( param instanceof SymbolConstant || param instanceof SymbolProcedure ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El simbolo " + id.getLexema().toUpperCase() + " no se puede pasar por referencia");
+
+		// CODIGO INTERMEDIO
+
+			SentCallParams params = new SentCallParams(new SymbolParameter(param.getScope(), param.getName(), param.getType()));
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactoryIF tf = new TemporalFactory(scopeManager.getCurrentScope());
+	
+			TemporalIF temp = tf.create();
+			Variable var = new Variable(param.getName(), param.getScope());
+			
+			cb.addQuadruple("MVA", temp, var);
+			cb.addQuadruple("PARAM", temp);
+
+			params.setIntermediateCode(cb.create());	
+		
+			RESULT = params;
+		:}
+        | TIDENTIFICADOR:id TCOMA sentCallParams:params
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF param = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+
+			if ( param == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Simbolo " + id.getLexema().toUpperCase() + " no definido");
+
+			if ( param instanceof SymbolConstant || param instanceof SymbolProcedure ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El simbolo " + id.getLexema().toUpperCase() + " no se puede pasar por referencia");
+						
+			params.addParameter(new SymbolParameter(param.getScope(), param.getName(), param.getType()));
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactoryIF tf = new TemporalFactory(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			Variable var = new Variable(param.getName(), param.getScope());
+
+			cb.addQuadruples(params.getIntermediateCode());
+			cb.addQuadruple("MVA", temp, var);
+			cb.addQuadruple("PARAM", temp);
+
+			params.setIntermediateCode(cb.create());
+
+			RESULT = params;
+		:}
+        | TIDENTIFICADOR:id1 TPUNTO TIDENTIFICADOR:id2
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id1.getLexema().toUpperCase());
+
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Simbolo " + id1.getLexema().toUpperCase() + " no definido");
+			
+			if ( ! (symbol.getType() instanceof TypeRecord) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". El simbolo " + id1.getLexema().toUpperCase() + " no es un registro");
+
+			if ( ! ((TypeRecord) symbol.getType()).containsField(id2.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Simbolo " + id2.getLexema().toUpperCase() + " no definido en el registro " + id1.getLexema().toUpperCase());
+
+		// CODIGO INTERMEDIO
+
+			RegCampo field = ((TypeRecord) symbol.getType()).getField(id2.getLexema());	
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactoryIF tf = new TemporalFactory(scopeManager.getCurrentScope());
+			
+			TemporalIF temp1 = tf.create();
+			TemporalIF temp2 = tf.create();
+			TemporalIF temp3 = tf.create();
+			Variable var = new Variable(id1.getLexema().toUpperCase(), symbol.getScope());
+
+			int position = ((TypeRecord) symbol.getType()).getField(id2.getLexema()).getPosition();			
+
+			// Direccion base
+			cb.addQuadruple("MVA", temp1, var);
+
+			// Desplazamiento
+			cb.addQuadruple("MV", temp2, position);
+
+			// Resta
+			cb.addQuadruple("SUB", temp3, temp1, temp2);
+
+			cb.addQuadruple("PARAM", temp3);
+
+			SymbolParameter param = new SymbolParameter(symbol.getScope(), symbol.getName() + "." + field.getName(), field.getType());
+
+			SentCallParams params = new SentCallParams(param);
+
+			params.setIntermediateCode(cb.create());
+
+			RESULT = params;
+		:}
+        | TIDENTIFICADOR:id1 TPUNTO TIDENTIFICADOR:id2 TCOMA sentCallParams:params
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id1.getLexema().toUpperCase());
+
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Simbolo " + id1.getLexema().toUpperCase() + " no definido");		
+
+			if ( ! (symbol.getType() instanceof TypeRecord) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". El simbolo " + id1.getLexema().toUpperCase() + " no es un registro");
+			
+			if ( ! ((TypeRecord) symbol.getType()).containsField(id2.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Simbolo " + id2.getLexema().toUpperCase() + " no definido en el registro " + id1.getLexema().toUpperCase());
+
+			RegCampo field = ((TypeRecord) symbol.getType()).getField(id2.getLexema());
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactoryIF tf = new TemporalFactory(scopeManager.getCurrentScope());
+			
+			cb.addQuadruples(params.getIntermediateCode());
+
+			TemporalIF temp1 = tf.create();
+			TemporalIF temp2 = tf.create();
+			TemporalIF temp3 = tf.create();
+
+			int position = ((TypeRecord) symbol.getType()).getField(id2.getLexema()).getPosition();
+
+			Variable var = new Variable(id1.getLexema().toUpperCase(), symbol.getScope());
+
+			// Direccion base
+			cb.addQuadruple("MVA", temp1, var);
+
+			// Desplazamiento
+			cb.addQuadruple("MV", temp2, position);
+
+			// Resta
+			cb.addQuadruple("SUB", temp3, temp1, temp2);
+
+			cb.addQuadruple("PARAM", temp3);
+
+			SymbolParameter param = new SymbolParameter(symbol.getScope(), symbol.getName() + "." + field.getName(), field.getType());
+
+			params.addParameter(param);
+			params.setIntermediateCode(cb.create());
+
+			RESULT = params;
+		:}
+        | // Nada
+		{: RESULT = new SentCallParams(); :}
+        | error {: semanticErrorManager.semanticFatalError("Error en argumentos de sentencia de llamada"); :}
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									       EXPRESIONES			        						 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+expresion::=
+        TNOT:tn expresion:e
+		{:
+
+		// COMPROBACIONES SEMANTICAS
+	
+        	if ( ! (e.getType() instanceof TypeBoolean) ) semanticErrorManager.semanticFatalError("Linea " + tn.getLine() + ". Negacion de tipo NO logico");
+
+			Expresion expr = new Expresion(e.getType());
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF eTemp = e.getTemporal();
+
+			cb.addQuadruples(e.getIntermediateCode());
+			cb.addQuadruple("NOT", temp, eTemp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;
+		:}                  
+        | TPARI expresion:e TPARD {: RESULT = e; :}
+        | expresion:e1 TDIVIDE:td expresion:e2
+        {: 
+
+		// COMPROBACIONES SEMANTICAS
+	
+        	if ( ! ((e1.getType() instanceof TypeInteger) && (e2.getType() instanceof TypeInteger)) ) semanticErrorManager.semanticFatalError("Linea " + td.getLine() + ". Operador / entre tipos incompatibles " + e1.getType().getName() + ", " + e2.getType().getName());
+
+			Expresion expr = new Expresion(e1.getType());
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF e1Temp = e1.getTemporal();
+			TemporalIF e2Temp = e2.getTemporal();
+
+			cb.addQuadruples(e1.getIntermediateCode());
+			cb.addQuadruples(e2.getIntermediateCode());
+			cb.addQuadruple("DIV", temp, e1Temp, e2Temp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;     	
+        :}
+        | expresion:e1 TSUMA:ts expresion:e2
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	if ( ! ((e1.getType() instanceof TypeInteger) && (e2.getType() instanceof TypeInteger)) ) semanticErrorManager.semanticFatalError("Linea " + ts.getLine() + ". Operador + entre tipos incompatibles " + e1.getType().getName() + ", " + e2.getType().getName());
+
+			Expresion expr = new Expresion(e1.getType());
+
+		// CODIGO INTERMEDIO
+					
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF e1Temp = e1.getTemporal();
+			TemporalIF e2Temp = e2.getTemporal();
+
+			cb.addQuadruples(e1.getIntermediateCode());
+			cb.addQuadruples(e2.getIntermediateCode());
+			cb.addQuadruple("ADD", temp, e1Temp, e2Temp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;     
+        :}
+        | expresion:e1 TAND:ta expresion:e2
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	if ( ! ((e1.getType() instanceof TypeBoolean) && (e2.getType() instanceof TypeBoolean)) ) semanticErrorManager.semanticFatalError("Linea " + ta.getLine() + ". Operador AND entre tipos incompatibles " + e1.getType().getName() + ", " + e2.getType().getName());
+
+			Expresion expr = new Expresion(e1.getType());
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF e1Temp = e1.getTemporal();
+			TemporalIF e2Temp = e2.getTemporal();
+
+			cb.addQuadruples(e1.getIntermediateCode());
+			cb.addQuadruples(e2.getIntermediateCode());
+			cb.addQuadruple("AND", temp, e1Temp, e2Temp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;     	
+        :}     
+        | expresion:e1 TMENOR:tm expresion:e2 
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	if ( ! ((e1.getType() instanceof TypeInteger) && (e2.getType() instanceof TypeInteger)) ) semanticErrorManager.semanticFatalError("Linea " + tm.getLine() + ". Operador < entre tipos incompatibles " + e1.getType().getName() + ", " + e2.getType().getName());
+
+			Expresion expr = new Expresion(new TypeBoolean(scopeManager.getCurrentScope()));
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF e1Temp = e1.getTemporal();
+			TemporalIF e2Temp = e2.getTemporal();
+
+			cb.addQuadruples(e1.getIntermediateCode());
+			cb.addQuadruples(e2.getIntermediateCode());
+			cb.addQuadruple("LS", temp, e1Temp, e2Temp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;
+        :}  
+        | expresion:e1 TDISTINTO:td expresion:e2
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+        	if ( ! ((e1.getType() instanceof TypeInteger) && (e2.getType() instanceof TypeInteger)) ) semanticErrorManager.semanticFatalError("Linea " + td.getLine() + ". Operador <> entre tipos incompatibles " + e1.getType().getName() + ", " + e2.getType().getName());
+
+			Expresion expr = new Expresion(new TypeBoolean(scopeManager.getCurrentScope()));
+
+		// CODIGO INTERMEDIO
+			
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF e1Temp = e1.getTemporal();
+			TemporalIF e2Temp = e2.getTemporal();
+
+			cb.addQuadruples(e1.getIntermediateCode());
+			cb.addQuadruples(e2.getIntermediateCode());
+			cb.addQuadruple("NEQ", temp, e1Temp, e2Temp);
+
+			expr.setTemporal(temp);
+			expr.setIntermediateCode(cb.create());
+
+			RESULT = expr;
+        :}
+        | TLINT:num 
+        {: 
+			Expresion e = new Expresion(new TypeInteger(scopeManager.getCurrentScope()));
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			Value val = new Value(num.getLexema());
+
+			cb.addQuadruple("MV", temp, val);
+
+			e.setTemporal(temp);
+			e.setIntermediateCode(cb.create());
+
+			RESULT = e;
+		:}
+        | TLTRUE:bool
+        {: 
+			Expresion e = new Expresion(new TypeBoolean(scopeManager.getCurrentScope()));
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+
+			Value val = new Value(1);
+			cb.addQuadruple("MV", temp, val);
+
+			e.setTemporal(temp);
+			e.setIntermediateCode(cb.create());
+
+			RESULT = e;
+		:}
+        | TLFALSE:bool
+        {: 
+			Expresion e = new Expresion(new TypeBoolean(scopeManager.getCurrentScope()));
+
+		// CODIGO INTERMEDIO
+				
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+
+			Value val = new Value(0);
+			cb.addQuadruple("MV", temp, val);
+
+			e.setTemporal(temp);
+			e.setIntermediateCode(cb.create());
+
+			RESULT = e;
+		:}
+        | TIDENTIFICADOR:id
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+			
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Simbolo " + id.getLexema().toUpperCase() + " no definido");
+
+			if ( symbol.getType() instanceof TypeProcedure && (!(symbol.getType() instanceof TypeFunction)) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". " + id.getLexema() + " es un procedimiento");
+
+			if ( symbol.getType() instanceof TypeFunction && ((TypeFunction) symbol.getType()).getNumParams() > 0 ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El numero de parametros de " + id.getLexema().toUpperCase() + " no coincide con el de la llamada");
+
+		// CODIGO INTERMEDIO
+
+			Expresion e = new Expresion(symbol.getType());
+
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+
+			if ( symbol instanceof SymbolConstant ) 
+			{
+				Value val = new Value(Integer.parseInt(((SymbolConstant) symbol).getValue()));
+				cb.addQuadruple("MV", temp, val);
+			}
+			else if ( symbol instanceof SymbolVariable || symbol instanceof SymbolParameter )
+			{
+				Variable var = new Variable(id.getLexema().toUpperCase(), symbol.getScope());
+				cb.addQuadruple("MVP", temp, var);
+			}
+			else
+			{
+				for ( Map.Entry<String, String> call: calls.entrySet() )
+				{
+					if ( call.getKey().equals(id.getLexema().toUpperCase()) && call.getValue().equals(scopeManager.getCurrentScope().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Recursividad indirecta no soportada");
+				}
+
+				if ( scopeManager.getCurrentScope().getLevel() != 0 && !scopeManager.getCurrentScope().getName().equals(id.getLexema().toUpperCase()) ) calls.put(scopeManager.getCurrentScope().getName(), id.getLexema().toUpperCase());
+			}
+
+			e.setTemporal(temp);
+			e.setIntermediateCode(cb.create());
+			
+			RESULT = e;
+        :}
+        | TIDENTIFICADOR:id1 TPUNTO TIDENTIFICADOR:id2
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id1.getLexema().toUpperCase());
+			
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Simbolo " + id1.getLexema().toUpperCase() + " no definido");
+			
+			if ( ! (symbol.getType() instanceof TypeRecord) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". El simbolo " + id1.getLexema().toUpperCase() + " no es un registro");
+			
+			if ( ! ((TypeRecord) symbol.getType()).containsField(id2.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id1.getLine() + ". Campo " + id2.getLexema().toUpperCase() + " no definido en el registro " + id1.getLexema().toUpperCase());
+
+		// CODIGO INTERMEDIO
+
+			Expresion e = new Expresion(((TypeRecord) symbol.getType()).getField(id2.getLexema().toUpperCase()).getType());
+
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			
+			TemporalIF temp = tf.create();
+			TemporalIF temp1 = tf.create();
+			TemporalIF temp2 = tf.create();
+			TemporalIF temp3 = tf.create();
+
+			int position = ((TypeRecord) symbol.getType()).getField(id2.getLexema()).getPosition();
+
+			Variable var = new Variable(id1.getLexema().toUpperCase(), symbol.getScope());
+
+			// Direccion base
+			cb.addQuadruple("MVA", temp1, var);		
+
+			// Desplazamiento
+			cb.addQuadruple("MV", temp2, position);
+
+			// Resta
+			cb.addQuadruple("SUB", temp3, temp1, temp2);
+			
+			cb.addQuadruple("MVP", temp, temp3);
+
+			e.setTemporal(temp);
+			e.setIntermediateCode(cb.create());
+			
+			RESULT = e;
+        :}                                      
+        | TIDENTIFICADOR:id TPARI sentCallParams:params TPARD
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+        	
+			if ( symbol == null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Funcion " + id.getLexema().toUpperCase() + " no definida");
+
+			if ( ! (symbol.getType() instanceof TypeFunction) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El simbolo " + id.getLexema().toUpperCase() + " no es una funcion" );
+
+			if ( params.getNumParams() != ((TypeFunction) symbol.getType()).getNumParams() ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El numero de parametros de la funcion " + id.getLexema().toUpperCase() + " no coincide con los de la llamada");
+
+			if ( params.compareTo(((TypeFunction) symbol.getType()).getParameters()) != null ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". El tipo del parametro " + params.compareTo(((TypeFunction) symbol.getType()).getParameters()).getType().getName() + " no coincide con el esperado");
+	
+			for ( Map.Entry<String, String> call: calls.entrySet() )
+			{
+				if ( call.getKey().equals(id.getLexema().toUpperCase()) && call.getValue().equals(scopeManager.getCurrentScope().getName()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Recursividad indirecta no soportada");
+			}
+
+			if ( scopeManager.getCurrentScope().getLevel() != 0 && !scopeManager.getCurrentScope().getName().equals(id.getLexema().toUpperCase()) ) calls.put(scopeManager.getCurrentScope().getName(), id.getLexema().toUpperCase());
+		
+		// CODIGO INTERMEDIO
+
+			Expresion exp = new Expresion(((TypeFunction) symbol.getType()).getReturnType());
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scopeManager.getCurrentScope());
+			TemporalFactory tf = new TemporalFactory(scopeManager.getCurrentScope());
+
+			TemporalIF rTemp = tf.create();
+			LabelIF labelProc = new Label("L_" + symbol.getScope().getName() + "_" + id.getLexema().toUpperCase(), symbol.getType());
+
+			cb.addQuadruple("ENTER", labelProc);
+			cb.addQuadruples(params.getIntermediateCode());
+			cb.addQuadruple("CALL", labelProc);		
+			cb.addQuadruple("RETURNVALUE", rTemp);
+
+			exp.setTemporal(rTemp);
+			exp.setIntermediateCode(cb.create());
+
+			RESULT = exp;			
+        :}                                          
+        | error {: semanticErrorManager.semanticFatalError("Error en expresion"); :} 
+    ;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// 									Reglas auxiliares										 	 //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+tipoPrimitivo ::=
+        TINTEGER:id {: RESULT = new Expresion(new TypeInteger(scopeManager.getCurrentScope())); :}   
+        | TBOOLEAN:id {: RESULT = new Expresion(new TypeBoolean(scopeManager.getCurrentScope())); :}
+    ;
+    
+varSeqDeIds ::=
+        TIDENTIFICADOR:id {: RESULT = new VarSeqDeIds(id.getLexema().toUpperCase() , id.getLine()); :} 
+        | TIDENTIFICADOR:id TCOMA varSeqDeIds:seq
+        {: 
+
+		// COMPROBACIONES SEMANTICAS
+  
+			if ( seq.getIDs().contains(id.getLexema().toUpperCase()) ) semanticErrorManager.semanticFatalError("Linea " + id.getLine() + ". Identificador " + id.getLexema() + " duplicado");
+
+        	seq.addID(id.getLexema().toUpperCase());
+        	
+        	RESULT = seq;
+        :}        
+    ;
+
+cuerpoModulo ::= 
+        ctes tipos vars subs:su TBEGIN finalModulo:fm
+        {:
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(fm.getScope());
+			TemporalFactoryIF tf = new TemporalFactory(fm.getScope());
+
+			if ( fm.getScope().getLevel() != 0 )
+			{
+				TemporalIF temp = tf.create();
+				LabelIF labelIni = lf.create(fm.getScope().getParentScope().getName() + "_" + fm.getScope().getName());
+
+				cb.addQuadruple("SUBROUTINE", labelIni);
+	
+				int size = fm.getScope().getTemporalTable().getSize() + 5;
+
+				for ( SymbolIF symbol: fm.getScope().getSymbolTable().getSymbols() )
+				{
+					if ( symbol instanceof SymbolVariable ) 
+					{
+						cb.addQuadruple("SUBROUTINEVARIABLE", symbol.getName(), 0);		
+					}
+
+					size += symbol.getType().getSize();
+				}
+
+				cb.addQuadruple("SUBROUTINEPOINTER", temp, size);
+			}
+
+			cb.addQuadruples(fm.getIntermediateCode());
+			cb.addQuadruples(su.getIntermediateCode());
+
+			fm.setIntermediateCode(cb.create());
+
+			RESULT = fm;
+		:}        
+        | error {: semanticErrorManager.semanticFatalError("Error en el cuerpo del modulo"); :}
+    ;
+    
+finalModulo ::= 
+        sentencias:sents TEND TIDENTIFICADOR:id ntPtoComa 
+        {:
+
+		// COMPROBACIONES SEMANTICAS
+
+			ScopeIF scope = scopeManager.getCurrentScope();
+			SymbolIF symbol = scopeManager.searchSymbol(id.getLexema().toUpperCase());
+
+			if ( symbol != null && symbol.getType() instanceof TypeFunction && !sents.isReturnContained() ) semanticErrorManager.semanticFatalError("Funcion " + scopeManager.getCurrentScope().getName() +  " sin RETURN");
+
+			if ( symbol != null && symbol.getType() instanceof TypeFunction && !sents.isBalanced() ) semanticErrorManager.semanticFatalError("Funcion " + scopeManager.getCurrentScope().getName() +  " mal balanceada (RETURN)");
+
+			if ( ! scopeManager.getCurrentScope().getName().equals(id.getLexema().toUpperCase())) semanticErrorManager.semanticFatalError("Cierre de ambito " + scopeManager.getCurrentScope().getName() + " invalido");																					
+	
+			scopeManager.closeScope();
+
+		// CODIGO INTERMEDIO
+
+			IntermediateCodeBuilder cb = new IntermediateCodeBuilder(scope);
+
+			if ( scope.getLevel() == 0 )
+			{		
+				cb.addQuadruples(sents.getIntermediateCode());		
+				cb.addQuadruple("HALT");
+			}
+			else
+			{
+				LabelIF labelFin = new Label("L_FIN_" + scope.getParentScope().getName() + "_" + scope.getName(), symbol.getType());
+	
+				int size = ((TypeProcedure) symbol.getType()).getNumParams() + 5;
+
+				cb.addQuadruples(sents.getIntermediateCode());
+				cb.addQuadruple("LEAVE", labelFin, size);
+			}
+
+			sents.setIntermediateCode(cb.create());
+			sents.setScope(scope);
+
+			RESULT = sents;
+		:}
+        | error {: semanticErrorManager.semanticFatalError("Error en el final del modulo"); :}
+    ;
+
+ntPtoComa ::= // Varios ';' seguidos deben ser interpretados como uno solo.        
+        TPTOCOMA 
+        | TPTOCOMA ntPtoComa
+    ;

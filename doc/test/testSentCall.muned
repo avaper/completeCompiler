@@ -1,0 +1,60 @@
+MODULE LLAMADA;
+
+  TYPE
+	personTAD = record
+	 isAlive: BOOLEAN;
+	 age	: INTEGER;
+
+  END;
+  
+  VAR a, b: INTEGER;
+  		 c: BOOLEAN;
+  	 Alejo: personTAD;
+
+  PROCEDURE func2 () : INTEGER;	
+ 	  
+ 	BEGIN
+		
+ 		RETURN Alejo.age;
+ 			
+  END func2;
+    
+  PROCEDURE func (VAR a: INTEGER) : INTEGER;	
+ 	  
+ 	BEGIN
+		
+ 		RETURN Alejo.age;
+ 			
+  END func;
+
+  PROCEDURE proc (VAR a, c, d: INTEGER; VAR b: BOOLEAN);	
+ 	  
+ 	BEGIN
+ 			
+  END proc;
+    
+  BEGIN
+    
+  proc(a, b, b, c);
+
+    
+  (*
+  proc;
+  proc(Alejo.error, b);
+  proc(a, Alejo.error);
+  proc(a.age, b);
+  proc(error.age, b);
+  
+  proc(a, x); 
+  proc(x, b);
+  proc(Alejo);
+  error;
+  func;
+  func();
+  proc(a, c);
+  proc();
+  error();  
+  proc(a, b, c, d, e, f);
+  *)
+  
+END LLAMADA;

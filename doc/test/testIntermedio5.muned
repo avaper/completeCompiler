@@ -1,0 +1,22 @@
+MODULE INTERMEDIO;
+  
+  TYPE
+  
+	personTAD = record
+	
+	 	agE	  : INTEGER;
+
+  	END;
+
+  VAR 
+  	Alejo : personTAD;
+  
+BEGIN
+
+  Alejo.age := 33;
+  
+
+  WRITEINT(Alejo.age);
+  WRITELN; 
+  	
+END INTERMEDIO;

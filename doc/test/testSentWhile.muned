@@ -1,0 +1,15 @@
+MODULE SENTWHILE;
+  
+  CONST a = 5;
+  
+  VAR b: INTEGER;
+  
+  BEGIN
+  
+  WHILE error <> 3 DO
+  
+  	WRITELN;
+  	
+  END;
+  
+END SENTWHILE;

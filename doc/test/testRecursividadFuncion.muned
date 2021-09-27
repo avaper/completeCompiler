@@ -1,0 +1,45 @@
+MODULE Recursividad;
+
+	VAR A : integer;
+		B : integer;
+     
+    	PROCEDURE Recursivo(): INTEGER;
+    	
+      		BEGIN
+      		
+      		IF A <> 10 THEN
+      		
+      			A := A + 1;
+      			WRITEINT(A);
+      			WRITELN;
+      			
+      			B := Recursivo();      		
+      		
+      		END;
+
+   			RETURN 12;
+
+      	END Recursivo;
+      
+BEGIN
+	
+	A := 1;
+	
+	B := Recursivo();
+	
+    IF B <> 12 THEN
+      		
+      	WRITESTRING("Fallo en el test");
+      	WRITELN;
+      			
+    ELSE
+      		
+    	WRITESTRING("Test OK");
+      	WRITELN;	
+      		
+    END;	
+    
+   	WRITEINT(A);
+   	
+   	
+END Recursividad;

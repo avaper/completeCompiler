@@ -1,0 +1,42 @@
+MODULE FUNCIONES;
+  		
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR d: BOOLEAN; VAR e,z: INTEGER) : INTEGER;
+      
+  (*
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR d: BOOLEAN; VAR a: INTEGER) : INTEGER;
+  PROCEDURE Sumar (VAR a, a, c: INTEGER; VAR b: BOOLEAN) : INTEGER;
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR a: BOOLEAN) : INTEGER;
+  *)	
+ 	
+ 	CONST m = 2;  
+
+	VAR aux: INTEGER;
+	 	  
+ 	BEGIN
+		
+ 		RETURN a;
+ 		RETURN 2;
+ 		RETURN m;
+ 		RETURN aux;
+ 		
+		(*
+		RETURN true;
+		*)
+ 		RETURN c;
+ 			
+  END Sumar;
+
+(*
+  PROCEDURE Sumar (VAR a, b, c: INTEGER; VAR d: BOOLEAN; VAR e,z: INTEGER) : INTEGER;
+	 	  
+ 	BEGIN
+		
+ 		RETURN a;
+ 		RETURN 2;
+ 			
+  END Sumar;
+*)
+	
+  BEGIN
+  
+END FUNCIONES;

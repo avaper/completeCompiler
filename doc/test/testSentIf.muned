@@ -1,0 +1,11 @@
+MODULE SENTIF;
+  	  
+  BEGIN
+  
+  IF 2 < 3 THEN
+  
+  	WRITELN;
+  	
+  END;
+  
+END SENTIF;

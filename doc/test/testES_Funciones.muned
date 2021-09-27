@@ -1,0 +1,27 @@
+MODULE RECURSIVIDAD;
+
+	VAR global : INTEGER;
+     
+    	PROCEDURE test(VAR x: INTEGER): INTEGER;
+    	
+      		BEGIN
+      		
+	      		RETURN 2;
+
+      	END test;
+      	
+    	PROCEDURE test2(VAR x: INTEGER): INTEGER;
+    	
+      		BEGIN
+      		
+	      		RETURN 3;
+
+      	END test2;
+      
+BEGIN
+	
+	WRITESTRING("FINAL: ");
+	WRITEINT(test(global) + test2(global));
+    WRITELN;
+    
+END RECURSIVIDAD;

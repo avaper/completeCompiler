@@ -1,0 +1,21 @@
+MODULE CONSTANTES;
+
+  CONST SIZE = 2;
+  		
+  PROCEDURE Sumar (VAR a: INTEGER; VAR b: INTEGER) : INTEGER;
+  	
+  	CONST size = false;
+  		
+  		(* 
+ 		SiZe = TRUE;
+  		*)
+ 		
+ 	BEGIN
+
+ 		RETURN a; 
+ 			
+  END Sumar; 	
+ 	
+  BEGIN
+  
+END CONSTANTES;

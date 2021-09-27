@@ -1,0 +1,27 @@
+MODULE VARIABLES;
+
+  VAR aux: INTEGER;
+  e,f,g,h: BOOLEAN;
+  
+  (*
+  e,f,aux,h: BOOLEAN;
+  e,f,e,h: BOOLEAN;
+  *)
+  		
+  PROCEDURE Sumar (VAR a: INTEGER; VAR b: INTEGER) : BOOLEAN;
+  	
+  	VAR auX: boolean;
+  	
+  		(*
+  		Aux: INTEGER;
+  		*)
+  		
+ 	BEGIN
+ 			
+ 		RETURN aux;
+ 			
+  END Sumar; 	
+ 	
+  BEGIN
+  
+END VARIABLES;

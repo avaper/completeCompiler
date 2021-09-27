@@ -1,0 +1,24 @@
+MODULE LEVEL0;
+  	
+  TYPE
+	personTAD = record
+		
+		number	 : INTEGER;
+		a		 : BOOLEAN;
+		b		 : BOOLEAN;
+		c		 : BOOLEAN;
+		d		 : BOOLEAN;
+	 	agE		 : INTEGER;
+	 	guitars	 : INTEGER;
+
+  	END;
+
+  VAR Alejo	: personTAD;
+
+BEGIN
+
+  Alejo.age := 33;
+  
+  WRITEINT(Alejo.age);
+  
+END LEVEL0;

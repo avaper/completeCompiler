@@ -1,0 +1,26 @@
+MODULE test;
+
+	VAR z : INTEGER;
+     
+    	PROCEDURE incrementar(VAR X: INTEGER);
+    	
+    		VAR y : INTEGER;
+    		
+      		BEGIN
+      		
+      			y := x + 1;
+      			x := y;
+
+      	END incrementar;
+      
+BEGIN
+	
+	z := 999;
+    
+    incrementar(z);
+    
+    WRITESTRING("z (1000)= ");
+   	WRITEINT(z);
+   	WRITELN;
+   	
+END test;

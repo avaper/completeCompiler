@@ -1,0 +1,28 @@
+MODULE INTERMEDIO;
+
+  PROCEDURE FUNC (VAR a: INTEGER): INTEGER;
+   
+ 	BEGIN
+  	  
+  	    WHILE TRUE DO
+  
+	  	  IF true THEN
+	  	  	
+	  	  	WRITELN;
+	  	  	RETURN 2;
+	  	  	
+	  	  ELSE
+	
+	  	  	WRITELN;
+	  	 	
+	  	  END;	
+
+		  RETURN 2;
+		  
+  		END;
+  	  
+  END FUNC; 
+   	
+BEGIN
+
+END INTERMEDIO;

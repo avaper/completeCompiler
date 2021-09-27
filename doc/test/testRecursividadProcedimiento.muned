@@ -1,0 +1,28 @@
+
+MODULE Recursividad;
+
+	VAR A : INTEGER;
+     
+    	PROCEDURE recursivo();
+    	
+      		BEGIN
+      		
+      		IF A <> 10 THEN
+      		
+      			A := A + 1;
+      			WRITEINT(A);
+      			WRITELN;
+      			
+      			recursivo();
+      		
+      		END;
+
+      	END recursivo;
+      
+BEGIN
+	
+	A := 1;
+	
+	Recursivo();
+	
+END Recursividad;
